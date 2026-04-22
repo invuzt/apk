@@ -9,17 +9,26 @@ pub extern "system" fn Java_com_example_androidautobuildapk_MainActivity_mesinPu
     _class: JClass,
     input: JString,
 ) -> jstring {
-    // Tambahkan '&' sebelum input untuk meminjam (borrow)
     let input_str: String = match env.get_string(&input) {
         Ok(s) => s.into(),
-        Err(_) => return env.new_string("ERROR").unwrap().into_raw(),
+        Err(_) => return env.new_string("ERR").unwrap().into_raw(),
     };
-    
-    let respon = match input_str.as_str() {
-        "PROSES" => "STATE:ACTIVE|COLOR:#00FF00|MSG:Rust Engine Processing",
-        "SETTING" => "STATE:CONFIG|COLOR:#FFFF00|MSG:Core Tuned",
-        "HISTORY" => "STATE:DATA|COLOR:#00FFFF|MSG:Logs Cleared",
-        _ => "STATE:UNKNOWN|COLOR:#FF0000|MSG:Unknown Command",
+
+    // Logika Pemisahan: CHAT vs AGENT
+    let respon = if input_str.contains("CHAT:") {
+        let msg = input_str.replace("CHAT:", "");
+        format!("STATE:AI_CHAT|COLOR:#00D1FF|MSG:Membalas pesan: {}", msg)
+    } else if input_str.contains("AGENT:") {
+        let task = input_str.replace("AGENT:", "");
+        // Simulasi Logika Agentic (Reasoning)
+        let action = if task.contains("OPTIMASI") {
+            "Membersihkan cache dan membatasi background proses."
+        } else {
+            "Menganalisis perintah sistem dan menunggu eksekusi."
+        };
+        format!("STATE:AI_AGENT|COLOR:#FF3D00|MSG:Tindakan: {}", action)
+    } else {
+        format!("STATE:IDLE|COLOR:#FFFFFF|MSG:Menunggu input...")
     };
 
     env.new_string(respon).unwrap().into_raw()
