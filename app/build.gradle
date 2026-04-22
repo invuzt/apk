@@ -13,19 +13,19 @@ android {
         targetSdk 35
         versionCode 1
         versionName "1.0"
-        
+
         ndk {
-            // Filter ABI agar APK tetap ramping
-            abiFilters "arm64-v8a", "armeabi-v7a"
+            // Hanya gunakan arm64-v8a untuk hasil paling kecil (opsional)
+            // Jika untuk moto g45, arm64-v8a saja sudah cukup
+            abiFilters "arm64-v8a"
         }
     }
 
-    // Solusi untuk error "Inconsistent JVM-target"
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-    
+
     kotlinOptions {
         jvmTarget = '17'
     }
@@ -34,12 +34,26 @@ android {
         release {
             minifyEnabled true
             shrinkResources true
+            // Menggunakan optimasi agresif R8
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.debug
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            // Memastikan library native tidak dikompres ganda
+            useLegacyPackaging = false
+        }
+        resources {
+            // Membuang file meta-data yang tidak perlu
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += '/META-INF/kotlin-stdlib.kotlin_module'
         }
     }
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.12.0'
+    // Menghapus core-ktx untuk menghemat ruang
+    // Menggunakan library dasar bawaan Android SDK
 }
