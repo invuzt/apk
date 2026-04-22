@@ -6,6 +6,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.view.Gravity;
+import android.view.View;
 import android.graphics.Color;
 
 public class MainActivity extends Activity {
@@ -15,6 +16,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setGravity(Gravity.CENTER);
@@ -24,19 +26,24 @@ public class MainActivity extends Activity {
         status.setText("VUZT READY");
         status.setTextColor(Color.WHITE);
         status.setGravity(Gravity.CENTER);
-        status.setPadding(0,0,0,50);
 
         layout.addView(status);
 
         String[] cmds = {"PROSES", "SETTING", "HISTORY"};
-        for (String c : cmds) {
+        for (final String c : cmds) {
             Button b = new Button(this);
             b.setText(c);
-            b.setOnClickListener(v -> {
-                String res = mesinPusatRust(c);
-                String[] p = res.split("\\|");
-                status.setText(p[0].substring(6));
-                status.setTextColor(Color.parseColor(p[1].substring(6)));
+            // MENGGUNAKAN ANONYMOUS CLASS (Bukan Lambda)
+            b.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String res = mesinPusatRust(c);
+                    String[] p = res.split("\\|");
+                    if (p.length >= 2) {
+                        status.setText(p[0].substring(6));
+                        status.setTextColor(Color.parseColor(p[1].substring(6)));
+                    }
+                }
             });
             layout.addView(b);
         }
