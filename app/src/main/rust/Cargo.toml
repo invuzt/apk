@@ -7,11 +7,11 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-jni = "0.21.1"
+jni = { version = "0.21.1", default-features = false }
 
 [profile.release]
-opt-level = "z"      # Optimasi ukuran paling ekstrem
-lto = true           # Link Time Optimization
-codegen-units = 1    # Membuat proses kompilasi lebih fokus pada ukuran
-panic = "abort"      # Menghilangkan kode unwinding stack
-strip = true         # Menghapus simbol debug secara otomatis
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

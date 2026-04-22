@@ -1,11 +1,8 @@
-plugins {
-    id 'com.android.application'
-}
+plugins { id 'com.android.application' }
 
 android {
     namespace 'com.example.androidautobuildapk'
     compileSdk 35
-
     defaultConfig {
         applicationId "com.example.androidautobuildapk"
         minSdk 24
@@ -14,21 +11,12 @@ android {
         versionName "1.0"
         ndk { abiFilters "arm64-v8a" }
     }
-
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
             signingConfig signingConfigs.debug
         }
     }
-    
-    packagingOptions {
-        jniLibs { useLegacyPackaging = false }
-    }
-}
-
-dependencies {
-    // Kosong. Benar-benar tanpa library tambahan.
 }

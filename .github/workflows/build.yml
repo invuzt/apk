@@ -1,4 +1,4 @@
-name: Build Rust-Kotlin APK
+name: Build Rust-Java APK Ultra-Slim
 
 on:
   push:
@@ -20,46 +20,35 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # Cache Rust & Cargo
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            app/src/main/rust/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android, armv7-linux-androideabi
+          targets: aarch64-linux-android
 
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk || true # || true agar tidak error jika sudah ada di cache
+      - name: Install Tools (Cargo-NDK & UPX)
+        run: |
+          cargo install cargo-ndk || true
+          sudo apt-get update && sudo apt-get install -y upx-ucl
 
-      - name: Build Rust Native Library
+      - name: Build & Compress Rust Library
         run: |
           cd app/src/main/rust
-          # Compile untuk ARM64
+          # Build hanya untuk arm64 agar APK tidak dobel ukuran
           cargo ndk -t arm64-v8a -o ../jniLibs/ build --release
-          # Compile untuk ARMv7
-          cargo ndk -t armeabi-v7a -o ../jniLibs/ build --release
-
-      - name: Grant execute permission
-        run: chmod +x gradlew
+          
+          # EKSEKUSI PEMERASAN: Kompres .so dengan UPX level maksimal
+          upx --best --ultra-brute ../jniLibs/arm64-v8a/libvuzt_native.so || true
 
       - name: Build APK
-        run: ./gradlew assembleRelease --stacktrace
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: rust-v${{ github.run_number }}
-          name: Rust Build v${{ github.run_number }}
+          tag_name: vuzt-v${{ github.run_number }}
+          name: Vuzt Ultra Slim v${{ github.run_number }}
           files: app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
