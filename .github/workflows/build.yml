@@ -1,4 +1,4 @@
-name: Build Rust-Java APK Ultra-Slim
+name: Build Split APK (Smallest Size)
 
 on:
   push:
@@ -23,32 +23,33 @@ jobs:
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android
+          targets: aarch64-linux-android, armv7-linux-androideabi
 
-      - name: Install Tools (Cargo-NDK & UPX)
+      - name: Install Tools
         run: |
           cargo install cargo-ndk || true
           sudo apt-get update && sudo apt-get install -y upx-ucl
 
-      - name: Build & Compress Rust Library
+      - name: Build & Compress Rust Libraries
         run: |
           cd app/src/main/rust
-          # Build hanya untuk arm64 agar APK tidak dobel ukuran
+          # Build ARM64
           cargo ndk -t arm64-v8a -o ../jniLibs/ build --release
+          # Build ARMv7
+          cargo ndk -t armeabi-v7a -o ../jniLibs/ build --release
           
-          # EKSEKUSI PEMERASAN: Kompres .so dengan UPX level maksimal
-          upx --best --ultra-brute ../jniLibs/arm64-v8a/libvuzt_native.so || true
+          # Kompres semua .so yang dihasilkan
+          find ../jniLibs/ -name "*.so" -exec upx --best --ultra-brute {} \;
 
-      - name: Build APK
+      - name: Build Split APKs
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --stacktrace
+          ./gradlew assembleRelease
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: vuzt-v${{ github.run_number }}
-          name: Vuzt Ultra Slim v${{ github.run_number }}
+          tag_name: vuzt-split-v${{ github.run_number }}
           files: app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

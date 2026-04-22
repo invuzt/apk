@@ -3,16 +3,25 @@ plugins { id 'com.android.application' }
 android {
     namespace 'com.example.androidautobuildapk'
     compileSdk 35
+    
     defaultConfig {
         applicationId "com.example.androidautobuildapk"
         minSdk 24
         targetSdk 35
         versionCode 1
         versionName "1.0"
-        ndk { abiFilters "arm64-v8a" }
-        // Batasi bahasa hanya ke Inggris untuk mengecilkan resources.arsc
-        resourceConfigurations += "en"
     }
+
+    // KONFIGURASI SPLIT APK
+    splits {
+        abi {
+            enable true
+            reset()
+            include "arm64-v8a", "armeabi-v7a" // Membuat 2 APK berbeda
+            universalApk false // Jangan buat APK gabungan
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
@@ -21,8 +30,8 @@ android {
             signingConfig signingConfigs.debug
         }
     }
-    // Optimasi ukuran Dex
-    dexOptions {
-        preDexLibraries false
+    
+    packagingOptions {
+        jniLibs { useLegacyPackaging = false }
     }
 }
