@@ -1,0 +1,17 @@
+[package]
+name = "vuzt_native"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "vuzt_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+jni = "0.21.1"
+
+[profile.release]
+opt-level = "z"      # Optimasi untuk ukuran (size)
+lto = true           # Link Time Optimization agar binary ramping
+codegen-units = 1    # Mengurangi paralelisme saat compile demi optimasi lebih dalam
+panic = "abort"      # Langsung stop jika panic, mencegah memori korup
