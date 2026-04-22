@@ -5,11 +5,15 @@ use jni::sys::jstring;
 
 #[no_mangle]
 pub extern "system" fn Java_com_example_androidautobuildapk_MainActivity_mesinPusatRust(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     input: JString,
 ) -> jstring {
-    let input_str: String = env.get_string(input).unwrap().into();
+    // Tambahkan '&' sebelum input untuk meminjam (borrow)
+    let input_str: String = match env.get_string(&input) {
+        Ok(s) => s.into(),
+        Err(_) => return env.new_string("ERROR").unwrap().into_raw(),
+    };
     
     let respon = match input_str.as_str() {
         "PROSES" => "STATE:ACTIVE|COLOR:#00FF00|MSG:Rust Engine Processing",
