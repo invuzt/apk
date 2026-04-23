@@ -65,12 +65,12 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         }
 
         // Buka Galeri saat diklik
-        btnGallery.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setType("image/*");
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-        });
+btnGallery.setOnClickListener(v -> {
+    Intent intent = new Intent(Intent.ACTION_VIEW);
+    intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    startActivity(intent);
+});
 
         btnShutter.setOnClickListener(v -> {
             if (currentMode.equals("CAMERA")) {
