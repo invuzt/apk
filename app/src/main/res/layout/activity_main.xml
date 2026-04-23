@@ -9,89 +9,70 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="20dp">
-        <Button
-            android:id="@+id/btnWtmToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:text="WTM: ON"
-            android:textSize="10sp"
-            android:textColor="#FFFFFF"
-            android:background="@android:drawable/screen_background_dark_transparent"
-            android:layout_alignParentEnd="true" />
-    </RelativeLayout>
+    <Button
+        android:id="@+id/btnWtmToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="50dp"
+        android:layout_marginEnd="20dp"
+        android:text="WTM: ON"
+        android:background="#44000000"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp" />
 
-    <LinearLayout
-        android:id="@+id/wtmContainer"
+    <TextView
+        android:id="@+id/txtGpsOverlay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/bottomControls"
+        android:layout_above="@+id/bottomBar"
         android:layout_marginStart="20dp"
         android:layout_marginBottom="20dp"
-        android:orientation="vertical"
-        android:padding="10dp"
-        android:background="#44000000">
-        <TextView
-            android:id="@+id/txtGpsOverlay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:text="Mencari GPS..." />
-    </LinearLayout>
+        android:textColor="#FFFFFF"
+        android:textSize="11sp"
+        android:shadowColor="#000000"
+        android:shadowRadius="5"
+        android:background="#33000000"
+        android:padding="5dp" />
 
     <LinearLayout
-        android:id="@+id/bottomControls"
+        android:id="@+id/bottomBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="220dp"
         android:layout_alignParentBottom="true"
+        android:background="#99000000"
         android:orientation="vertical"
-        android:background="#AA000000"
-        android:paddingBottom="40dp">
+        android:gravity="center">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:padding="15dp">
-            <TextView android:id="@+id/modeCam" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="FOTO" android:textColor="#FFCC00" android:textStyle="bold" android:layout_marginEnd="30dp" />
+            android:layout_marginBottom="30dp">
+            <TextView android:id="@+id/modeCam" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PHOTO" android:textColor="#FFCC00" android:textStyle="bold" android:layout_marginEnd="40dp" />
             <TextView android:id="@+id/modeVid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIDEO" android:textColor="#FFFFFF" />
         </LinearLayout>
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="100dp">
+            android:layout_height="wrap_content">
             
             <ImageButton
                 android:id="@+id/btnSwitch"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_centerVertical="true"
-                android:layout_marginStart="40dp"
-                android:src="@android:drawable/ic_menu_rotate"
+                android:layout_marginStart="50dp"
                 android:background="@android:drawable/screen_background_dark_transparent"
+                android:src="@android:drawable/ic_menu_rotate"
                 android:scaleType="centerInside" />
 
-            <FrameLayout
-                android:id="@+id/shutterWrapper"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_centerInParent="true">
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@android:drawable/presence_online"
-                    android:alpha="0.2" />
-                <View
-                    android:id="@+id/btnShutter"
-                    android:layout_width="65dp"
-                    android:layout_height="65dp"
-                    android:layout_gravity="center"
-                    android:background="@android:drawable/presence_online" />
-            </FrameLayout>
+            <View
+                android:id="@+id/btnShutter"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:layout_centerInParent="true"
+                android:background="@android:drawable/presence_online" />
 
             <View
                 android:id="@+id/btnGallery"
@@ -99,8 +80,8 @@
                 android:layout_height="45dp"
                 android:layout_centerVertical="true"
                 android:layout_alignParentEnd="true"
-                android:layout_marginEnd="45dp"
-                android:background="#55FFFFFF" />
+                android:layout_marginEnd="50dp"
+                android:background="#44FFFFFF" />
         </RelativeLayout>
     </LinearLayout>
 </RelativeLayout>
