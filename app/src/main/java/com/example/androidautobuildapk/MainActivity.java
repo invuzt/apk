@@ -1,6 +1,8 @@
 package com.example.androidautobuildapk;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.*;
 import android.os.Bundle;
@@ -10,6 +12,7 @@ import androidx.camera.core.*;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.*;
 import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
@@ -20,8 +23,8 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     private LifecycleRegistry lifecycleRegistry;
     private PreviewView previewView;
     private TextView txtGpsOverlay, modeCam, modeVid;
+    private View btnShutter, wtmOverlay;
     private Button btnWtmToggle;
-    private View btnShutter;
     
     private ImageCapture imageCapture;
     private VideoCapture<Recorder> videoCapture;
@@ -31,6 +34,12 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     private String coords = "", address = "Mencari GPS...";
     private String currentMode = "CAMERA";
     private boolean isWtmOn = true;
+
+    private final String[] REQUIRED_PERMISSIONS = new String[]{
+        Manifest.permission.CAMERA, 
+        Manifest.permission.ACCESS_FINE_LOCATION, 
+        Manifest.permission.RECORD_AUDIO
+    };
 
     @Override public androidx.lifecycle.Lifecycle getLifecycle() { return lifecycleRegistry; }
 
@@ -42,23 +51,32 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         lifecycleRegistry = new LifecycleRegistry(this);
         lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.CREATED);
 
-        // Binding UI secara eksplisit
+        bindViews();
+        
+        if (allPermissionsGranted()) {
+            startCamera();
+            setupLocation();
+        } else {
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 101);
+        }
+    }
+
+    private void bindViews() {
         previewView = findViewById(R.id.previewView);
         txtGpsOverlay = findViewById(R.id.txtGpsOverlay);
+        wtmOverlay = findViewById(R.id.wtmOverlay);
         btnWtmToggle = findViewById(R.id.btnWtmToggle);
         btnShutter = findViewById(R.id.btnShutter);
         modeCam = findViewById(R.id.modeCam);
         modeVid = findViewById(R.id.modeVid);
         ImageButton btnSwitch = findViewById(R.id.btnSwitch);
 
-        // Toggle Watermark
         btnWtmToggle.setOnClickListener(v -> {
             isWtmOn = !isWtmOn;
             btnWtmToggle.setText(isWtmOn ? "WTM: ON" : "WTM: OFF");
-            txtGpsOverlay.setVisibility(isWtmOn ? View.VISIBLE : View.GONE);
+            wtmOverlay.setVisibility(isWtmOn ? View.VISIBLE : View.GONE);
         });
 
-        // Logika Shutter (Foto / Video)
         btnShutter.setOnClickListener(v -> {
             if (currentMode.equals("CAMERA")) {
                 PhotoHelper.takePhoto(imageCapture, this, isWtmOn, coords, address);
@@ -70,33 +88,37 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
             }
         });
 
-        // Switch Kamera (Depan/Belakang)
         btnSwitch.setOnClickListener(v -> {
             selector = (selector == CameraSelector.DEFAULT_BACK_CAMERA) ? 
                        CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
             startCamera();
         });
 
-        // Ganti Mode
         modeCam.setOnClickListener(v -> setAppMode("CAMERA"));
         modeVid.setOnClickListener(v -> setAppMode("VIDEO"));
-
-        startCamera();
-        setupLocation();
     }
 
-    private void setAppMode(String targetMode) {
-        currentMode = targetMode;
-        if (currentMode.equals("VIDEO")) {
-            modeVid.setTextColor(Color.BLACK);
-            modeVid.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
-            modeCam.setTextColor(Color.WHITE);
-            modeCam.setBackground(null);
+    private void setAppMode(String m) {
+        currentMode = m;
+        modeCam.setTextColor(m.equals("CAMERA") ? Color.WHITE : 0x88FFFFFF);
+        modeVid.setTextColor(m.equals("VIDEO") ? Color.WHITE : 0x88FFFFFF);
+        btnShutter.setBackgroundColor(m.equals("VIDEO") ? Color.RED : Color.WHITE);
+    }
+
+    private boolean allPermissionsGranted() {
+        for (String p : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int rc, String[] p, int[] g) {
+        if (rc == 101 && allPermissionsGranted()) {
+            startCamera();
+            setupLocation();
         } else {
-            modeCam.setTextColor(Color.BLACK);
-            modeCam.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
-            modeVid.setTextColor(Color.WHITE);
-            modeVid.setBackground(null);
+            Toast.makeText(this, "Izin diperlukan untuk aplikasi ini", Toast.LENGTH_LONG).show();
         }
     }
 
