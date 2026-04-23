@@ -7,6 +7,9 @@ import android.graphics.Color;
 import android.location.*;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.*;
 import androidx.camera.core.*;
 import androidx.camera.lifecycle.ProcessCameraProvider;
@@ -22,7 +25,7 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     private LifecycleRegistry lifecycleRegistry;
     private PreviewView previewView;
     private TextView txtGps, modeCam, modeVid;
-    private View btnShutter;
+    private View btnShutter, btnGallery, flashView;
     private String currentMode = "CAMERA";
     private boolean isWtmOn = true;
     
@@ -44,8 +47,10 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         previewView = findViewById(R.id.previewView);
         txtGps = findViewById(R.id.txtGpsOverlay);
         btnShutter = findViewById(R.id.btnShutter);
+        btnGallery = findViewById(R.id.btnGallery);
         modeCam = findViewById(R.id.modeCam);
         modeVid = findViewById(R.id.modeVid);
+        flashView = findViewById(R.id.flashView);
 
         if (allPermissionsGranted()) {
             startCamera();
@@ -56,7 +61,6 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
             }, 101);
         }
 
-        // Action Handlers
         findViewById(R.id.btnWtmToggle).setOnClickListener(v -> {
             isWtmOn = !isWtmOn;
             ((Button)v).setText(isWtmOn ? "WTM: ON" : "WTM: OFF");
@@ -65,6 +69,7 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
 
         btnShutter.setOnClickListener(v -> {
             if (currentMode.equals("CAMERA")) {
+                showCaptureFeedback(); // Jalankan animasi
                 PhotoHelper.takePhoto(imageCapture, this, isWtmOn, txtGps.getText().toString(), "");
             } else {
                 videoHelper.toggle(videoCapture, this, new VideoHelper.VideoActionCallback() {
@@ -81,6 +86,26 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
 
         modeCam.setOnClickListener(v -> switchMode("CAMERA"));
         modeVid.setOnClickListener(v -> switchMode("VIDEO"));
+    }
+
+    private void showCaptureFeedback() {
+        // 1. Efek Flash (Kedip Putih)
+        flashView.setVisibility(View.VISIBLE);
+        AlphaAnimation fade = new AlphaAnimation(1.0f, 0.0f);
+        fade.setDuration(300);
+        fade.setAnimationListener(new Animation.AnimationListener() {
+            @Override public void onAnimationStart(Animation a) {}
+            @Override public void onAnimationEnd(Animation a) { flashView.setVisibility(View.GONE); }
+            @Override public void onAnimationRepeat(Animation a) {}
+        });
+        flashView.startAnimation(fade);
+
+        // 2. Animasi ke Galeri (Sederhana: Tombol Galeri Berdenyut)
+        btnGallery.animate()
+            .scaleX(1.2f).scaleY(1.2f)
+            .setDuration(100)
+            .withEndAction(() -> btnGallery.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start())
+            .start();
     }
 
     private void switchMode(String m) {
@@ -107,16 +132,8 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
                 ProcessCameraProvider cp = ProcessCameraProvider.getInstance(this).get();
                 Preview preview = new Preview.Builder().build();
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-                imageCapture = new ImageCapture.Builder()
-                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                        .build();
-
-                Recorder recorder = new Recorder.Builder()
-                        .setQualitySelector(QualitySelector.from(Quality.SD))
-                        .build();
-                videoCapture = VideoCapture.withOutput(recorder);
-
+                imageCapture = new ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build();
+                videoCapture = VideoCapture.withOutput(new Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.SD)).build());
                 cp.unbindAll();
                 cp.bindToLifecycle(this, selector, preview, imageCapture, videoCapture);
                 lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.RESUMED);
