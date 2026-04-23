@@ -10,31 +10,21 @@ android {
         applicationId "com.example.androidautobuildapk"
         minSdk 24
         targetSdk 34
-        versionCode 7
-        versionName "1.7"
-        multiDexEnabled true
+        versionCode 8
+        versionName "1.8-diet"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            // INI KUNCINYA UNTUK DIET
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
             signingConfig signingConfigs.debug
-        }
-    }
-    
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-
-    packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
 }
 
-// PAKSA VERSI KOTLIN AGAR TIDAK DUPLIKAT
 configurations.all {
     resolutionStrategy.eachDependency { DependencyResolveDetails details ->
         if (details.requested.group == 'org.jetbrains.kotlin') {
@@ -44,15 +34,10 @@ configurations.all {
 }
 
 dependencies {
+    // Pakai yang benar-benar inti saja
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core:1.12.0'
-    
     def camerax_version = "1.3.0"
-    implementation "androidx.camera:camera-core:${camerax_version}"
     implementation "androidx.camera:camera-camera2:${camerax_version}"
     implementation "androidx.camera:camera-lifecycle:${camerax_version}"
     implementation "androidx.camera:camera-view:${camerax_version}"
-    
-    implementation "androidx.lifecycle:lifecycle-runtime:2.6.2"
-    implementation "com.google.guava:guava:32.1.3-android"
 }
