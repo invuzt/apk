@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends Activity implements LocationListener, LifecycleOwner {
@@ -32,7 +33,8 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     private ImageCapture imageCapture;
     private VideoCapture<Recorder> videoCapture;
     private Recording recording;
-    private String currentGps = "No GPS Data";
+    private String currentAddress = "Mencari Lokasi...";
+    private String currentCoords = "";
 
     @Override public androidx.lifecycle.Lifecycle getLifecycle() { return lifecycleRegistry; }
 
@@ -44,14 +46,14 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
 
         RelativeLayout root = new RelativeLayout(this);
         previewView = new PreviewView(this);
-        // FILL_CENTER agar preview di layar tidak lonjong
         previewView.setScaleType(PreviewView.ScaleType.FILL_CENTER); 
         root.addView(previewView, new RelativeLayout.LayoutParams(-1, -1));
 
         locText = new TextView(this);
-        locText.setBackgroundColor(Color.parseColor("#80000000"));
+        locText.setBackgroundColor(Color.parseColor("#99000000"));
         locText.setTextColor(Color.WHITE);
-        locText.setPadding(30, 30, 30, 30);
+        locText.setPadding(35, 35, 35, 35);
+        locText.setTextSize(14);
         root.addView(locText, new RelativeLayout.LayoutParams(-1, -2));
 
         LinearLayout btnArea = new LinearLayout(this);
@@ -74,8 +76,6 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         videoBtn.setOnClickListener(v -> toggleVideo(videoBtn));
 
         setContentView(root);
-
-        // Langsung cek izin saat start
         checkPermissionsAndStart();
     }
 
@@ -96,20 +96,11 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         cameraProviderFuture.addListener(() -> {
             try {
                 ProcessCameraProvider cp = cameraProviderFuture.get();
-                // Gunakan rasio 4:3 agar standar sensor kamera
                 Preview p = new Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_4_3).build();
                 p.setSurfaceProvider(previewView.getSurfaceProvider());
-                
-                imageCapture = new ImageCapture.Builder()
-                        .setTargetAspectRatio(AspectRatio.RATIO_4_3)
-                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                        .build();
-
-                Recorder recorder = new Recorder.Builder()
-                        .setQualitySelector(QualitySelector.from(Quality.LOWEST))
-                        .build();
+                imageCapture = new ImageCapture.Builder().setTargetAspectRatio(AspectRatio.RATIO_4_3).build();
+                Recorder recorder = new Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.LOWEST)).build();
                 videoCapture = VideoCapture.withOutput(recorder);
-
                 cp.unbindAll();
                 cp.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, p, imageCapture, videoCapture);
                 lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.RESUMED);
@@ -129,27 +120,42 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     }
 
     private void processAndSave(ImageProxy image) {
-        // Konversi ImageProxy ke Bitmap asli tanpa distorsi
         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
         byte[] bytes = new byte[buffer.remaining()];
         buffer.get(bytes);
         Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         
-        // Fix rotasi jika perlu (beberapa HP menyimpan secara landscape)
         Matrix matrix = new Matrix();
         matrix.postRotate(image.getImageInfo().getRotationDegrees());
         Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
         Bitmap mutableBitmap = rotatedBitmap.copy(Bitmap.Config.ARGB_8888, true);
         Canvas canvas = new Canvas(mutableBitmap);
-        Paint paint = new Paint();
-        paint.setColor(Color.YELLOW);
-        paint.setTextSize(mutableBitmap.getWidth() / 20f);
-        paint.setFakeBoldText(true);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(mutableBitmap.getWidth() / 25f);
         paint.setShadowLayer(10, 0, 0, Color.BLACK);
 
-        canvas.drawText(currentGps, 40, mutableBitmap.getHeight() - 150, paint);
-        canvas.drawText(new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(System.currentTimeMillis()), 40, mutableBitmap.getHeight() - 70, paint);
+        String time = new SimpleDateFormat("dd MMM yyyy, HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis());
+        
+        // Tata letak teks (Berurutan ke bawah)
+        float x = 50f;
+        float yStart = mutableBitmap.getHeight() - 250f;
+        
+        canvas.drawText(time, x, yStart, paint);
+        canvas.drawText(currentCoords, x, yStart + 70, paint);
+        
+        // Membungkus teks alamat agar tidak keluar layar (Auto Wrap sederhana)
+        TextPaint tp = new TextPaint();
+        tp.setColor(Color.YELLOW);
+        tp.setTextSize(mutableBitmap.getWidth() / 30f);
+        tp.setShadowLayer(8, 0, 0, Color.BLACK);
+        
+        float maxWidth = mutableBitmap.getWidth() - 100;
+        String addressLine = currentAddress;
+        if (addressLine.length() > 50) addressLine = addressLine.substring(0, 47) + "...";
+        
+        canvas.drawText(addressLine, x, yStart + 130, paint);
 
         saveToGallery(mutableBitmap);
     }
@@ -164,7 +170,7 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
             OutputStream os = getContentResolver().openOutputStream(uri);
             bmp.compress(Bitmap.CompressFormat.JPEG, 95, os);
             os.close();
-            runOnUiThread(() -> Toast.makeText(this, "Foto Tersimpan!", Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> Toast.makeText(this, "Foto & Alamat Tersimpan!", Toast.LENGTH_SHORT).show());
         } catch (Exception e) {}
     }
 
@@ -174,9 +180,6 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         cv.put(MediaStore.MediaColumns.DISPLAY_NAME, "Vuzt_Vid_" + System.currentTimeMillis());
         cv.put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4");
         cv.put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/VuztCam");
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return;
-
         recording = videoCapture.getOutput()
                 .prepareRecording(this, new MediaStoreOutputOptions.Builder(getContentResolver(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI).setContentValues(cv).build())
                 .withAudioEnabled()
@@ -189,20 +192,26 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     private void setupLocation() {
         try {
             LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
+            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 5, this);
         } catch (SecurityException e) {}
     }
 
     @Override public void onLocationChanged(Location l) {
-        currentGps = String.format(Locale.US, "Lat: %.6f | Long: %.6f", l.getLatitude(), l.getLongitude());
-        locText.setText(currentGps);
+        currentCoords = String.format(Locale.US, "Lat: %.6f, Long: %.6f", l.getLatitude(), l.getLongitude());
+        try {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocation(l.getLatitude(), l.getLongitude(), 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                currentAddress = addresses.get(0).getAddressLine(0);
+            }
+        } catch (Exception e) {
+            currentAddress = "Alamat tidak ditemukan";
+        }
+        locText.setText(currentCoords + "\n" + currentAddress);
     }
 
     @Override public void onRequestPermissionsResult(int rc, String[] p, int[] g) {
         if (rc == 101 && g.length > 0 && g[0] == 0) { startCamera(); setupLocation(); }
     }
-
-    @Override protected void onStart() { super.onStart(); }
-    @Override protected void onResume() { super.onResume(); }
     @Override protected void onDestroy() { super.onDestroy(); lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.DESTROYED); }
 }
