@@ -14,61 +14,85 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
 import java.util.Locale;
+import java.util.List;
 
 public class MainActivity extends Activity implements LocationListener, LifecycleOwner {
     private LifecycleRegistry lifecycleRegistry;
     private PreviewView previewView;
+    private TextView txtGpsOverlay, modeCam, modeVid;
+    private Button btnWtmToggle;
+    private View btnShutter;
+    
     private ImageCapture imageCapture;
     private VideoCapture<Recorder> videoCapture;
     private VideoHelper videoHelper = new VideoHelper();
     private CameraSelector selector = CameraSelector.DEFAULT_BACK_CAMERA;
     
-    private String coords = "", address = "Mencari...";
+    private String coords = "", address = "Mencari Lokasi...";
     private String mode = "CAMERA";
+    private boolean isWtmOn = true;
 
     @Override public androidx.lifecycle.Lifecycle getLifecycle() { return lifecycleRegistry; }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main); // Panggil XML
+        setContentView(R.layout.activity_main);
         
         lifecycleRegistry = new LifecycleRegistry(this);
         lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.CREATED);
 
+        // Binding UI
         previewView = findViewById(R.id.previewView);
-        View btnShutter = findViewById(R.id.btnShutter);
+        txtGpsOverlay = findViewById(R.id.txtGpsOverlay);
+        btnWtmToggle = findViewById(R.id.btnWtmToggle);
+        btnShutter = findViewById(R.id.btnShutter);
+        modeCam = findViewById(R.id.modeCam);
+        modeVid = findViewById(R.id.modeVid);
         View btnSwitch = findViewById(R.id.btnSwitch);
-        TextView modeVid = findViewById(R.id.modeVid);
-        TextView modeCam = findViewById(R.id.modeCam);
 
-        btnShutter.setOnClickListener(v -> {
-            if (mode.equals("CAMERA")) PhotoHelper.takePhoto(imageCapture, this, true, coords, address);
-            else videoHelper.toggle(videoCapture, this, new VideoHelper.VideoActionCallback() {
-                @Override public void onStarted() { btnShutter.setBackgroundColor(Color.RED); }
-                @Override public void onStopped() { btnShutter.setBackgroundColor(Color.WHITE); }
-            });
+        // Listener Watermark On/Off
+        btnWtmToggle.setOnClickListener(v -> {
+            isWtmOn = !isWtmOn;
+            btnWtmToggle.setText(isWtmOn ? "WTM: ON" : "WTM: OFF");
+            txtGpsOverlay.setVisibility(isWtmOn ? View.VISIBLE : View.GONE);
         });
 
+        // Listener Shutter
+        btnShutter.setOnClickListener(v -> {
+            if (mode.equals("CAMERA")) {
+                PhotoHelper.takePhoto(imageCapture, this, isWtmOn, coords, address);
+            } else {
+                videoHelper.toggle(videoCapture, this, new VideoHelper.VideoActionCallback() {
+                    @Override public void onStarted() { btnShutter.setBackgroundColor(Color.RED); }
+                    @Override public void onStopped() { btnShutter.setBackgroundColor(Color.WHITE); }
+                });
+            }
+        });
+
+        // Switch Camera
         btnSwitch.setOnClickListener(v -> {
-            selector = (selector == CameraSelector.DEFAULT_BACK_CAMERA) ? CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
+            selector = (selector == CameraSelector.DEFAULT_BACK_CAMERA) ? 
+                       CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
             startCamera();
         });
 
-        modeVid.setOnClickListener(v -> { mode = "VIDEO"; updateUI(modeCam, modeVid); });
-        modeCam.setOnClickListener(v -> { mode = "CAMERA"; updateUI(modeCam, modeVid); });
+        // Mode Switching
+        modeCam.setOnClickListener(v -> switchMode("CAMERA"));
+        modeVid.setOnClickListener(v -> switchMode("VIDEO"));
 
         startCamera();
         setupLocation();
     }
 
-    private void updateUI(TextView cam, TextView vid) {
+    private void switchMode(String newMode) {
+        mode = newMode;
         if (mode.equals("VIDEO")) {
-            vid.setTextColor(Color.BLACK); vid.setBackgroundColor(0xFFAEC6CF);
-            cam.setTextColor(Color.WHITE); cam.setBackgroundColor(Color.TRANSPARENT);
+            modeVid.setTextColor(Color.BLACK); modeVid.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
+            modeCam.setTextColor(Color.WHITE); modeCam.setBackground(null);
         } else {
-            cam.setTextColor(Color.BLACK); cam.setBackgroundColor(0xFFAEC6CF);
-            vid.setTextColor(Color.WHITE); vid.setBackgroundColor(Color.TRANSPARENT);
+            modeCam.setTextColor(Color.BLACK); modeCam.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
+            modeVid.setTextColor(Color.WHITE); modeVid.setBackground(null);
         }
     }
 
@@ -76,11 +100,10 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         ProcessCameraProvider.getInstance(this).addListener(() -> {
             try {
                 ProcessCameraProvider cp = ProcessCameraProvider.getInstance(this).get();
-                Preview p = new Preview.Builder().build();
+                Preview p = new Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_4_3).build();
                 p.setSurfaceProvider(previewView.getSurfaceProvider());
-                imageCapture = new ImageCapture.Builder().build();
+                imageCapture = new ImageCapture.Builder().setTargetAspectRatio(AspectRatio.RATIO_4_3).build();
                 videoCapture = VideoCapture.withOutput(new Recorder.Builder().build());
-                
                 cp.unbindAll();
                 cp.bindToLifecycle(this, selector, p, imageCapture, videoCapture);
                 lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.RESUMED);
@@ -97,5 +120,10 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
 
     @Override public void onLocationChanged(Location l) {
         coords = String.format(Locale.US, "Lat: %.6f, Long: %.6f", l.getLatitude(), l.getLongitude());
+        try {
+            List<Address> adr = new Geocoder(this, Locale.getDefault()).getFromLocation(l.getLatitude(), l.getLongitude(), 1);
+            if (adr != null && !adr.isEmpty()) address = adr.get(0).getAddressLine(0);
+        } catch (Exception e) {}
+        txtGpsOverlay.setText(coords + "\n" + address);
     }
 }

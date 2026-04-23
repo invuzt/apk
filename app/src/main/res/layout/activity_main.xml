@@ -9,11 +9,33 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="60dp"
-        android:layout_marginBottom="220dp" />
+        android:layout_marginBottom="200dp" />
+
+    <Button
+        android:id="@+id/btnWtmToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="70dp"
+        android:layout_marginEnd="20dp"
+        android:text="WTM: ON"
+        android:textSize="10sp"
+        android:alpha="0.7"
+        android:backgroundTint="#44FFFFFF"/>
+
+    <TextView
+        android:id="@+id/txtGpsOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:padding="15dp"
+        android:textColor="#FFFFFF"
+        android:background="#66000000"
+        android:textSize="12sp" />
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="200dp"
         android:layout_alignParentBottom="true"
         android:background="#000000">
 
@@ -24,39 +46,47 @@
             android:gravity="center"
             android:orientation="horizontal">
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/btnSwitch"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
                 android:layout_marginEnd="40dp"
                 android:background="@android:drawable/btn_default_small"
-                android:padding="15dp"
+                android:padding="12dp"
+                android:scaleType="centerInside"
                 android:src="@android:drawable/ic_menu_rotate" />
 
             <View
                 android:id="@+id/btnShutter"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
                 android:background="@android:drawable/presence_online" />
 
             <View
                 android:id="@+id/btnGallery"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_marginStart="40dp"
                 android:background="#FFFFFF" />
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/modeSelector"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="15dp"
             android:gravity="center">
-            <TextView android:id="@+id/modeQr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="QR SCAN" android:textColor="#80FFFFFF" android:padding="10dp" />
-            <TextView android:id="@+id/modeCam" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="CAMERA" android:textColor="#000000" android:background="#AEC6CF" android:paddingHorizontal="15dp" android:paddingVertical="5dp" android:layout_marginHorizontal="10dp" />
-            <TextView android:id="@+id/modeVid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIDEO" android:textColor="#80FFFFFF" android:padding="10dp" />
+            
+            <TextView android:id="@+id/modeQr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="QR SCAN" android:textColor="#88FFFFFF" android:padding="10dp" android:textSize="12sp" />
+            
+            <TextView android:id="@+id/modeCam" 
+                android:layout_width="wrap_content" android:layout_height="wrap_content" 
+                android:text="CAMERA" android:textColor="#000000" 
+                android:background="#AEC6CF" android:paddingHorizontal="12dp" 
+                android:paddingVertical="4dp" android:layout_marginHorizontal="8dp" 
+                android:textSize="12sp" android:textStyle="bold" />
+            
+            <TextView android:id="@+id/modeVid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIDEO" android:textColor="#88FFFFFF" android:padding="10dp" android:textSize="12sp" />
         </LinearLayout>
     </RelativeLayout>
 </RelativeLayout>
