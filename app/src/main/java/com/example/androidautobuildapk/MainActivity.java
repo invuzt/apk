@@ -3,111 +3,116 @@ package com.example.androidautobuildapk;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.hardware.Camera;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.ViewGroup;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.graphics.Color;
+
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LifecycleRegistry;
+
+import com.google.common.util.concurrent.ListenableFuture;
 import java.util.Date;
 
-public class MainActivity extends Activity implements SurfaceHolder.Callback, LocationListener {
-    private Camera mCamera;
-    private SurfaceView mPreview;
+public class MainActivity extends Activity implements LocationListener, LifecycleOwner {
+    private PreviewView previewView;
     private TextView locText;
-    private LocationManager locManager;
+    private LifecycleRegistry lifecycleRegistry;
+
+    @Override
+    public androidx.lifecycle.Lifecycle getLifecycle() { return lifecycleRegistry; }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        lifecycleRegistry = new LifecycleRegistry(this);
+        lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.CREATED);
 
-        // Layout Setup
-        FrameLayout root = new FrameLayout(this);
-        mPreview = new SurfaceView(this);
-        mPreview.getHolder().addCallback(this);
-        root.addView(mPreview);
+        // Main Layout (RelativeLayout agar bisa tumpang tindih)
+        RelativeLayout root = new RelativeLayout(this);
 
+        // 1. Camera Preview (Auto Aspect Ratio)
+        previewView = new PreviewView(this);
+        previewView.setScaleType(PreviewView.ScaleType.FILL_CENTER);
+        root.addView(previewView, new RelativeLayout.LayoutParams(-1, -1));
+
+        // 2. Info GPS (Overlay Atas)
         locText = new TextView(this);
-        locText.setBackgroundColor(Color.parseColor("#99000000"));
+        locText.setBackgroundColor(Color.parseColor("#80000000"));
         locText.setTextColor(Color.WHITE);
-        locText.setPadding(40, 40, 40, 40);
-        
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(-1, -2);
-        lp.gravity = android.view.Gravity.BOTTOM;
-        root.addView(locText, lp);
+        locText.setPadding(30, 30, 30, 30);
+        RelativeLayout.LayoutParams txtLp = new RelativeLayout.LayoutParams(-1, -2);
+        txtLp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        root.addView(locText, txtLp);
+
+        // 3. Tombol Shutter (Overlay Bawah Tengah)
+        Button shutterBtn = new Button(this);
+        shutterBtn.setText("AMBIL FOTO");
+        shutterBtn.setBackgroundColor(Color.RED);
+        shutterBtn.setTextColor(Color.WHITE);
+        RelativeLayout.LayoutParams btnLp = new RelativeLayout.LayoutParams(-2, -2);
+        btnLp.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        btnLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        btnLp.setMargins(0, 0, 0, 100);
+        root.addView(shutterBtn, btnLp);
+
+        shutterBtn.setOnClickListener(v -> Toast.makeText(this, "Foto diambil!", Toast.LENGTH_SHORT).show());
 
         setContentView(root);
 
-        // Cek Izin Kamera & GPS
-        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            
-            requestPermissions(new String[]{
-                Manifest.permission.CAMERA, 
-                Manifest.permission.ACCESS_FINE_LOCATION
-            }, 101);
-            locText.setText("Menunggu izin kamera...");
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            startCamera();
         } else {
-            setupLocation();
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION}, 101);
         }
+        setupLocation();
     }
 
-    private void startCamera(SurfaceHolder holder) {
-        try {
-            if (mCamera != null) {
-                mCamera.stopPreview();
-                mCamera.release();
-            }
-            mCamera = Camera.open(0);
-            mCamera.setDisplayOrientation(90);
-            mCamera.setPreviewDisplay(holder);
-            mCamera.startPreview();
-            locText.setText("Kamera Aktif. Mencari GPS...");
-        } catch (Exception e) {
-            locText.setText("Gagal: " + e.getMessage());
-        }
+    private void startCamera() {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                Preview preview = new Preview.Builder().build();
+                preview.setSurfaceProvider(previewView.getSurfaceProvider());
+                cameraProvider.unbindAll();
+                cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview);
+            } catch (Exception e) {}
+        }, ContextCompat.getMainExecutor(this));
     }
 
     private void setupLocation() {
         try {
-            locManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-            locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
-        } catch (SecurityException e) {}
-    }
-
-    // INI KUNCINYA: Langsung start setelah izin diberikan
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == 101 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            // Izin diberikan, pancing ulang Surface kamera
-            startCamera(mPreview.getHolder());
-            setupLocation();
-        } else {
-            locText.setText("Izin ditolak. Aplikasi tidak bisa berjalan.");
-        }
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            startCamera(holder);
-        }
+            LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
+            }
+        } catch (Exception e) {}
     }
 
     @Override public void onLocationChanged(Location l) {
-        locText.setText("Vuzt Cam\nLat: " + l.getLatitude() + "\nLong: " + l.getLongitude() + "\n" + new Date().toString());
+        locText.setText("Lat: " + l.getLatitude() + " | Long: " + l.getLongitude() + "\n" + new Date().toString());
     }
 
-    @Override public void surfaceDestroyed(SurfaceHolder h) {
-        if (mCamera != null) { mCamera.stopPreview(); mCamera.release(); mCamera = null; }
+    @Override protected void onStart() { super.onStart(); lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.STARTED); }
+    @Override protected void onResume() { super.onResume(); lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.RESUMED); }
+    @Override protected void onDestroy() { super.onDestroy(); lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.DESTROYED); }
+    
+    @Override public void onRequestPermissionsResult(int rc, String[] p, int[] g) {
+        if (rc == 101 && g.length > 0 && g[0] == 0) { startCamera(); setupLocation(); }
     }
-    @Override public void surfaceChanged(SurfaceHolder h, int f, int w, int h1) {}
-    @Override public void onStatusChanged(String p, int s, Bundle e) {}
-    @Override public void onProviderEnabled(String p) {}
-    @Override public void onProviderDisabled(String p) {}
 }
