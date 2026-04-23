@@ -9,6 +9,7 @@ import android.location.*;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.TextPaint;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.camera.core.*;
@@ -35,6 +36,7 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     private Recording recording;
     private String currentAddress = "Mencari Lokasi...";
     private String currentCoords = "";
+    private boolean isWatermarkOn = true;
 
     @Override public androidx.lifecycle.Lifecycle getLifecycle() { return lifecycleRegistry; }
 
@@ -53,8 +55,22 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         locText.setBackgroundColor(Color.parseColor("#99000000"));
         locText.setTextColor(Color.WHITE);
         locText.setPadding(35, 35, 35, 35);
-        locText.setTextSize(14);
         root.addView(locText, new RelativeLayout.LayoutParams(-1, -2));
+
+        // Tombol Toggle Watermark (Pojok Kanan Atas)
+        Button toggleWtm = new Button(this);
+        toggleWtm.setText("WTM: ON");
+        toggleWtm.setAlpha(0.7f);
+        RelativeLayout.LayoutParams wlp = new RelativeLayout.LayoutParams(-2, -2);
+        wlp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        wlp.setMargins(0, 50, 50, 0);
+        root.addView(toggleWtm, wlp);
+        
+        toggleWtm.setOnClickListener(v -> {
+            isWatermarkOn = !isWatermarkOn;
+            toggleWtm.setText(isWatermarkOn ? "WTM: ON" : "WTM: OFF");
+            locText.setVisibility(isWatermarkOn ? android.view.View.VISIBLE : android.view.View.GONE);
+        });
 
         LinearLayout btnArea = new LinearLayout(this);
         btnArea.setOrientation(LinearLayout.HORIZONTAL);
@@ -80,8 +96,7 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     }
 
     private void checkPermissionsAndStart() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             startCamera();
             setupLocation();
         } else {
@@ -130,32 +145,26 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
         Bitmap mutableBitmap = rotatedBitmap.copy(Bitmap.Config.ARGB_8888, true);
-        Canvas canvas = new Canvas(mutableBitmap);
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(mutableBitmap.getWidth() / 25f);
-        paint.setShadowLayer(10, 0, 0, Color.BLACK);
+        
+        // HANYA LUKIS WATERMARK JIKA ON
+        if (isWatermarkOn) {
+            Canvas canvas = new Canvas(mutableBitmap);
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(mutableBitmap.getWidth() / 25f);
+            paint.setShadowLayer(10, 0, 0, Color.BLACK);
 
-        String time = new SimpleDateFormat("dd MMM yyyy, HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis());
-        
-        // Tata letak teks (Berurutan ke bawah)
-        float x = 50f;
-        float yStart = mutableBitmap.getHeight() - 250f;
-        
-        canvas.drawText(time, x, yStart, paint);
-        canvas.drawText(currentCoords, x, yStart + 70, paint);
-        
-        // Membungkus teks alamat agar tidak keluar layar (Auto Wrap sederhana)
-        TextPaint tp = new TextPaint();
-        tp.setColor(Color.YELLOW);
-        tp.setTextSize(mutableBitmap.getWidth() / 30f);
-        tp.setShadowLayer(8, 0, 0, Color.BLACK);
-        
-        float maxWidth = mutableBitmap.getWidth() - 100;
-        String addressLine = currentAddress;
-        if (addressLine.length() > 50) addressLine = addressLine.substring(0, 47) + "...";
-        
-        canvas.drawText(addressLine, x, yStart + 130, paint);
+            String time = new SimpleDateFormat("dd MMM yyyy, HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis());
+            float x = 50f;
+            float yStart = mutableBitmap.getHeight() - 250f;
+            
+            canvas.drawText(time, x, yStart, paint);
+            canvas.drawText(currentCoords, x, yStart + 70, paint);
+            
+            String addressLine = currentAddress;
+            if (addressLine.length() > 50) addressLine = addressLine.substring(0, 47) + "...";
+            canvas.drawText(addressLine, x, yStart + 130, paint);
+        }
 
         saveToGallery(mutableBitmap);
     }
@@ -170,7 +179,7 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
             OutputStream os = getContentResolver().openOutputStream(uri);
             bmp.compress(Bitmap.CompressFormat.JPEG, 95, os);
             os.close();
-            runOnUiThread(() -> Toast.makeText(this, "Foto & Alamat Tersimpan!", Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> Toast.makeText(this, "Foto Tersimpan!", Toast.LENGTH_SHORT).show());
         } catch (Exception e) {}
     }
 
@@ -204,14 +213,11 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
             if (addresses != null && !addresses.isEmpty()) {
                 currentAddress = addresses.get(0).getAddressLine(0);
             }
-        } catch (Exception e) {
-            currentAddress = "Alamat tidak ditemukan";
-        }
-        locText.setText(currentCoords + "\n" + currentAddress);
+        } catch (Exception e) { currentAddress = "Alamat tidak ditemukan"; }
+        if (isWatermarkOn) locText.setText(currentCoords + "\n" + currentAddress);
     }
 
     @Override public void onRequestPermissionsResult(int rc, String[] p, int[] g) {
         if (rc == 101 && g.length > 0 && g[0] == 0) { startCamera(); setupLocation(); }
     }
-    @Override protected void onDestroy() { super.onDestroy(); lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.DESTROYED); }
 }
