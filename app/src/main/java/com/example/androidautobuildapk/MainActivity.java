@@ -2,14 +2,16 @@ package com.example.androidautobuildapk;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.*;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
+import android.view.animation.*;
 import android.widget.*;
 import androidx.camera.core.*;
 import androidx.camera.lifecycle.ProcessCameraProvider;
@@ -25,7 +27,8 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     private LifecycleRegistry lifecycleRegistry;
     private PreviewView previewView;
     private TextView txtGps, modeCam, modeVid;
-    private View btnShutter, btnGallery, flashView;
+    private View btnShutter, flashView;
+    private ImageView btnGallery; // Ubah ke ImageView untuk thumbnail
     private String currentMode = "CAMERA";
     private boolean isWtmOn = true;
     
@@ -61,20 +64,27 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
             }, 101);
         }
 
-        findViewById(R.id.btnWtmToggle).setOnClickListener(v -> {
-            isWtmOn = !isWtmOn;
-            ((Button)v).setText(isWtmOn ? "WTM: ON" : "WTM: OFF");
-            txtGps.setVisibility(isWtmOn ? View.VISIBLE : View.GONE);
+        // Buka Galeri saat diklik
+        btnGallery.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setType("image/*");
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         });
 
         btnShutter.setOnClickListener(v -> {
             if (currentMode.equals("CAMERA")) {
-                showCaptureFeedback(); // Jalankan animasi
-                PhotoHelper.takePhoto(imageCapture, this, isWtmOn, txtGps.getText().toString(), "");
+                showCaptureFeedback();
+                // Kirim listener ke PhotoHelper agar kita dapat filenya
+                PhotoHelper.takePhoto(imageCapture, this, isWtmOn, txtGps.getText().toString(), new PhotoHelper.OnPhotoSavedListener() {
+                    @Override public void onSaved(Uri uri, Bitmap thumbnail) {
+                        runOnUiThread(() -> btnGallery.setImageBitmap(thumbnail));
+                    }
+                });
             } else {
                 videoHelper.toggle(videoCapture, this, new VideoHelper.VideoActionCallback() {
-                    @Override public void onStarted() { btnShutter.setBackgroundColor(Color.RED); }
-                    @Override public void onStopped() { btnShutter.setBackgroundColor(Color.WHITE); }
+                    @Override public void onStarted() { startVideoAnimation(); }
+                    @Override public void onStopped() { stopVideoAnimation(); }
                 });
             }
         });
@@ -89,23 +99,29 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     }
 
     private void showCaptureFeedback() {
-        // 1. Efek Flash (Kedip Putih)
         flashView.setVisibility(View.VISIBLE);
         AlphaAnimation fade = new AlphaAnimation(1.0f, 0.0f);
         fade.setDuration(300);
         fade.setAnimationListener(new Animation.AnimationListener() {
-            @Override public void onAnimationStart(Animation a) {}
             @Override public void onAnimationEnd(Animation a) { flashView.setVisibility(View.GONE); }
-            @Override public void onAnimationRepeat(Animation a) {}
+            @Override public void onAnimationStart(Animation a) {} @Override public void onAnimationRepeat(Animation a) {}
         });
         flashView.startAnimation(fade);
+    }
 
-        // 2. Animasi ke Galeri (Sederhana: Tombol Galeri Berdenyut)
-        btnGallery.animate()
-            .scaleX(1.2f).scaleY(1.2f)
-            .setDuration(100)
-            .withEndAction(() -> btnGallery.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start())
-            .start();
+    private void startVideoAnimation() {
+        btnShutter.setBackgroundColor(Color.RED);
+        ScaleAnimation pulse = new ScaleAnimation(1f, 1.2f, 1f, 1.2f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        pulse.setDuration(500);
+        pulse.setRepeatMode(Animation.REVERSE);
+        pulse.setRepeatCount(Animation.INFINITE);
+        btnShutter.startAnimation(pulse);
+    }
+
+    private void stopVideoAnimation() {
+        btnShutter.clearAnimation();
+        btnShutter.setBackgroundColor(Color.WHITE);
+        btnShutter.setScaleX(1f); btnShutter.setScaleY(1f);
     }
 
     private void switchMode(String m) {
@@ -119,21 +135,14 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
     }
 
-    @Override
-    public void onRequestPermissionsResult(int rc, String[] p, int[] g) {
-        if (rc == 101 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED) {
-            startCamera(); setupLocation();
-        }
-    }
-
     private void startCamera() {
         ProcessCameraProvider.getInstance(this).addListener(() -> {
             try {
                 ProcessCameraProvider cp = ProcessCameraProvider.getInstance(this).get();
                 Preview preview = new Preview.Builder().build();
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
-                imageCapture = new ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build();
-                videoCapture = VideoCapture.withOutput(new Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.SD)).build());
+                imageCapture = new ImageCapture.Builder().build();
+                videoCapture = VideoCapture.withOutput(new Recorder.Builder().build());
                 cp.unbindAll();
                 cp.bindToLifecycle(this, selector, preview, imageCapture, videoCapture);
                 lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.RESUMED);

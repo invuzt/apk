@@ -37,8 +37,6 @@
         android:layout_marginBottom="20dp"
         android:textColor="#FFFFFF"
         android:textSize="11sp"
-        android:shadowColor="#000000"
-        android:shadowRadius="5"
         android:background="#33000000"
         android:padding="5dp" />
 
@@ -81,14 +79,17 @@
                 android:layout_centerInParent="true"
                 android:background="@android:drawable/presence_online" />
 
-            <View
+            <ImageView
                 android:id="@+id/btnGallery"
-                android:layout_width="45dp"
-                android:layout_height="45dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_centerVertical="true"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="50dp"
-                android:background="#44FFFFFF" />
+                android:background="#44FFFFFF"
+                android:padding="2dp"
+                android:scaleType="centerCrop"
+                android:clipToOutline="true" />
         </RelativeLayout>
     </LinearLayout>
 </RelativeLayout>
