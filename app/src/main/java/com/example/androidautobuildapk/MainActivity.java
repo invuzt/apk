@@ -28,8 +28,8 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
     private VideoHelper videoHelper = new VideoHelper();
     private CameraSelector selector = CameraSelector.DEFAULT_BACK_CAMERA;
     
-    private String coords = "", address = "Mencari Lokasi...";
-    private String mode = "CAMERA";
+    private String coords = "", address = "Mencari GPS...";
+    private String currentMode = "CAMERA";
     private boolean isWtmOn = true;
 
     @Override public androidx.lifecycle.Lifecycle getLifecycle() { return lifecycleRegistry; }
@@ -42,25 +42,25 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
         lifecycleRegistry = new LifecycleRegistry(this);
         lifecycleRegistry.setCurrentState(androidx.lifecycle.Lifecycle.State.CREATED);
 
-        // Binding UI
+        // Binding UI secara eksplisit
         previewView = findViewById(R.id.previewView);
         txtGpsOverlay = findViewById(R.id.txtGpsOverlay);
         btnWtmToggle = findViewById(R.id.btnWtmToggle);
         btnShutter = findViewById(R.id.btnShutter);
         modeCam = findViewById(R.id.modeCam);
         modeVid = findViewById(R.id.modeVid);
-        View btnSwitch = findViewById(R.id.btnSwitch);
+        ImageButton btnSwitch = findViewById(R.id.btnSwitch);
 
-        // Listener Watermark On/Off
+        // Toggle Watermark
         btnWtmToggle.setOnClickListener(v -> {
             isWtmOn = !isWtmOn;
             btnWtmToggle.setText(isWtmOn ? "WTM: ON" : "WTM: OFF");
             txtGpsOverlay.setVisibility(isWtmOn ? View.VISIBLE : View.GONE);
         });
 
-        // Listener Shutter
+        // Logika Shutter (Foto / Video)
         btnShutter.setOnClickListener(v -> {
-            if (mode.equals("CAMERA")) {
+            if (currentMode.equals("CAMERA")) {
                 PhotoHelper.takePhoto(imageCapture, this, isWtmOn, coords, address);
             } else {
                 videoHelper.toggle(videoCapture, this, new VideoHelper.VideoActionCallback() {
@@ -70,29 +70,33 @@ public class MainActivity extends Activity implements LocationListener, Lifecycl
             }
         });
 
-        // Switch Camera
+        // Switch Kamera (Depan/Belakang)
         btnSwitch.setOnClickListener(v -> {
             selector = (selector == CameraSelector.DEFAULT_BACK_CAMERA) ? 
                        CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
             startCamera();
         });
 
-        // Mode Switching
-        modeCam.setOnClickListener(v -> switchMode("CAMERA"));
-        modeVid.setOnClickListener(v -> switchMode("VIDEO"));
+        // Ganti Mode
+        modeCam.setOnClickListener(v -> setAppMode("CAMERA"));
+        modeVid.setOnClickListener(v -> setAppMode("VIDEO"));
 
         startCamera();
         setupLocation();
     }
 
-    private void switchMode(String newMode) {
-        mode = newMode;
-        if (mode.equals("VIDEO")) {
-            modeVid.setTextColor(Color.BLACK); modeVid.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
-            modeCam.setTextColor(Color.WHITE); modeCam.setBackground(null);
+    private void setAppMode(String targetMode) {
+        currentMode = targetMode;
+        if (currentMode.equals("VIDEO")) {
+            modeVid.setTextColor(Color.BLACK);
+            modeVid.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
+            modeCam.setTextColor(Color.WHITE);
+            modeCam.setBackground(null);
         } else {
-            modeCam.setTextColor(Color.BLACK); modeCam.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
-            modeVid.setTextColor(Color.WHITE); modeVid.setBackground(null);
+            modeCam.setTextColor(Color.BLACK);
+            modeCam.setBackgroundResource(android.R.drawable.editbox_dropdown_light_frame);
+            modeVid.setTextColor(Color.WHITE);
+            modeVid.setBackground(null);
         }
     }
 
