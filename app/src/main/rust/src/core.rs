@@ -1,12 +1,9 @@
-pub fn proses_data(input: String) -> String {
-    if input.is_empty() {
-        return "System: Input Kosong".to_string();
-    }
-
-    // CONTOH LOGIKA: Anda bisa kembangkan ini sesuka hati
-    match input.as_str() {
-        "ping" => "pong!".to_string(),
-        "info" => "Vuzt Engine v2.0 - Rust Powered".to_string(),
-        _ => format!("Rust Memproses: {}", input.to_uppercase())
+// Gunakan inline agar compiler langsung menempelkan kode ini ke jembatan (hemat size)
+#[inline(always)]
+pub fn engine(input: &str) -> String {
+    match input {
+        "1" => "Vuzt: Active".to_string(),
+        "2" => "Battery: OK".to_string(),
+        _ => format!("Res: {}", input.to_lowercase())
     }
 }

@@ -1,5 +1,4 @@
-mod core; // Menghubungkan ke file core.rs
-
+mod core;
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::jstring;
@@ -7,19 +6,15 @@ use jni::sys::jstring;
 #[no_mangle]
 pub extern "system" fn Java_com_example_androidautobuildapk_MainActivity_mesinPusatRust(
     mut env: JNIEnv,
-    _class: JClass,
+    _: JClass,
     input: JString,
 ) -> jstring {
-    // Ambil string dari Java
-    let input_str: String = env.get_string(&input)
-        .map(|s| s.into())
-        .unwrap_or_else(|_| "ERR".to_string());
+    // Ambil string tanpa alokasi berlebih
+    let s: String = env.get_string(&input).map(Into::into).unwrap_or_default();
+    
+    // Panggil engine modular
+    let res = core::engine(&s);
 
-    // Panggil logika dari file core.rs
-    let hasil = core::proses_data(input_str);
-
-    // Kirim balik ke Java
-    env.new_string(hasil)
-        .map(|js| js.into_raw())
-        .unwrap_or(std::ptr::null_mut())
+    // Kirim balik
+    env.new_string(res).map_or(std::ptr::null_mut(), |js| js.into_raw())
 }
