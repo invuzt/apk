@@ -2,10 +2,8 @@ package a.b;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.widget.*;
 import android.view.Gravity;
-import android.view.View;
-import android.graphics.Color;
+import android.widget.*;
 
 public class MainActivity extends Activity {
     static { System.loadLibrary("vuzt_native"); }
@@ -15,93 +13,55 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // --- 1. Layout Akar (Relative) ---
-        RelativeLayout root = new RelativeLayout(this);
-        root.setPadding(60, 60, 60, 60);
-        root.setBackgroundColor(Style.BG_COLOR);
+        // Root Layout
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setGravity(Gravity.CENTER_HORIZONTAL);
+        root.setPadding(60, 100, 60, 0);
+        root.setBackgroundColor(Style.BG);
 
-        // --- 2. Kontainer Tengah (Linear) ---
-        // Ini adalah kotak transparan di tengah yang menampung elemen
-        LinearLayout centralContainer = new LinearLayout(this);
-        centralContainer.setOrientation(LinearLayout.VERTICAL);
-        // centralContainer.setGravity(Gravity.CENTER); // Mengetengahkan elemen di dalamnya
-        
-        // Parameter untuk menempatkan centralContainer di tengah RelativeLayout
-        RelativeLayout.LayoutParams containerParams = new RelativeLayout.LayoutParams(
-            RelativeLayout.LayoutParams.MATCH_PARENT,
-            RelativeLayout.LayoutParams.WRAP_CONTENT
-        );
-        containerParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE); // Kunci Posisi Tengah
-        centralContainer.setLayoutParams(containerParams);
+        // Judul
+        TextView title = new TextView(this);
+        title.setText("Forgot Password");
+        Style.text(title, "#FFFFFF", 24);
 
+        // Subtitle
+        TextView sub = new TextView(this);
+        sub.setText("Enter your registered phone number.");
+        Style.text(sub, "#DDDDDD", 14);
+        sub.setGravity(Gravity.CENTER);
 
-        // --- 3. Elemen-elemen UI (Di dalam centralContainer) ---
+        // Input
+        EditText input = new EditText(this);
+        input.setHint("62853xxx");
+        Style.box(input, "#102B6D", 15);
+        input.setPadding(40, 40, 40, 40);
 
-        // Judul (Plain Text Besar)
-        TextView tvTitle = new TextView(this);
-        tvTitle.setText("Cak Ru");
-        tvTitle.setTextSize(24);
-        tvTitle.setTextColor(Style.TEXT_COLOR);
-        tvTitle.setGravity(Gravity.CENTER);
-        tvTitle.setPadding(0, 0, 0, 60); // Jarak bawah
-        centralContainer.addView(tvTitle);
+        // Tombol
+        Button btn = new Button(this);
+        btn.setText("Next");
+        Style.box(btn, "#FFB72B", 15);
+        btn.setTextColor(Color.WHITE);
 
-	// Response JNI (Pindah ke bawah kontaine>
-        final TextView tvResponse = new TextView(>
-        tvResponse.setText("Waiting...");
-        tvResponse.setTextColor(Style.TEXT_COLOR);
-        tvResponse.setPadding(0, 100, 0, 0); // J>
-        tvResponse.setGravity(Gravity.CENTER);
-        centralContainer.addView(tvResponse);
+        // Response/Status
+        TextView res = new TextView(this);
+        res.setText("Ready");
+        Style.text(res, "#00FF00", 12);
+        res.setGravity(Gravity.CENTER);
 
+        // Susun Ke Layar (Panggil Mesin Layout)
+        root.addView(title, Layout.params(Layout.WRAP, Layout.WRAP, 0));
+        root.addView(sub, Layout.params(Layout.WRAP, Layout.WRAP, 20));
+        root.addView(input, Layout.params(Layout.MATCH, Layout.WRAP, 80));
+        root.addView(btn, Layout.params(Layout.MATCH, 130, 40));
+        root.addView(res, Layout.params(Layout.WRAP, Layout.WRAP, 50));
 
-        // Sub-judul (Teks Kecil)
-        TextView tvSubTitle = new TextView(this);
-        tvSubTitle.setText("Enter Text");
-        tvSubTitle.setTextSize(14);
-        tvSubTitle.setTextColor(Color.parseColor("#DDDDDD"));
-        tvSubTitle.setGravity(Gravity.CENTER);
-        tvSubTitle.setPadding(0, 0, 0, 60); // Jarak bawah
-        centralContainer.addView(tvSubTitle);
-
-        // Input Field
-        final EditText etInput = new EditText(this);
-        etInput.setHint("input teks"); // Sesuai gambar
-        Style.applyInputStyle(etInput);
-        centralContainer.addView(etInput);
-
-        // Spacer (Jarak antara input dan tombol)
-        View spacer = new View(this);
-        LinearLayout.LayoutParams spacerParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 60); // Tinggi spacer
-        centralContainer.addView(spacer, spacerParams);
-
-        // Tombol Kuning
-        Button btnNext = new Button(this);
-        btnNext.setText("Next");
-        Style.applyButtonStyle(btnNext);
-        centralContainer.addView(btnNext);
-
-        // Response JNI (Pindah ke bawah kontainer tengah)
-        // final TextView tvResponse = new TextView(this);
-        // tvResponse.setText("Waiting...");
-        // tvResponse.setTextColor(Style.TEXT_COLOR);
-        // tvResponse.setPadding(0, 100, 0, 0); // Jarak atas yang besar
-        // tvResponse.setGravity(Gravity.CENTER);
-        // centralContainer.addView(tvResponse);
-        
-        // Logika Tombol (Tetap Modular)
-        btnNext.setOnClickListener(v -> {
-            String command = etInput.getText().toString();
-            if(!command.isEmpty()){
-                String result = mesinPusatRust(command);
-                tvResponse.setText(result);
-            }
+        // Logika
+        btn.setOnClickListener(v -> {
+            String out = mesinPusatRust(input.getText().toString());
+            res.setText(out);
         });
 
-
-        // --- 4. Selesai & Tampilkan ---
-        root.addView(centralContainer);
         setContentView(root);
     }
 }
