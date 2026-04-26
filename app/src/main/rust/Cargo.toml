@@ -10,8 +10,8 @@ crate-type = ["cdylib"]
 jni = { version = "0.21.1", default-features = false }
 
 [profile.release]
-opt-level = "z"     # Fokus ukuran
+opt-level = "z"     # Optimasi ukuran terkecil
 lto = true          # Link Time Optimization penuh
 codegen-units = 1   # Maksimalkan optimasi antar file
-panic = "abort"     # Hapus overhead panic-handler
-strip = true        # Buang simbol-simbol nama fungsi yang tidak perlu
+panic = "abort"     # Hapus overhead panic-handler (anti-crash)
+strip = true        # Buang simbol-simbol nama fungsi

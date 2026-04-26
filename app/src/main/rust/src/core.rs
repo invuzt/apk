@@ -1,9 +1,14 @@
-// Gunakan inline agar compiler langsung menempelkan kode ini ke jembatan (hemat size)
+// Fungsi logika murni, terpisah dari urusan JNI
 #[inline(always)]
 pub fn engine(input: &str) -> String {
-    match input {
-        "1" => "Vuzt: Active".to_string(),
-        "2" => "Battery: OK".to_string(),
-        _ => format!("Res: {}", input.to_lowercase())
+    if input.is_empty() {
+        return "Sistem: Input Kosong".to_string();
+    }
+
+    // CONTOH LOGIKA: Sederhana & Cepat
+    match input.trim() {
+        "ping" => "pong!".to_string(),
+        "info" => "Vuzt Engine v3.0 [Plain UI Edition]".to_string(),
+        _ => format!("Rust Memproses: {}", input)
     }
 }
