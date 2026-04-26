@@ -1,3 +1,5 @@
+mod core; // Menghubungkan ke file core.rs
+
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::jstring;
@@ -8,10 +10,16 @@ pub extern "system" fn Java_com_example_androidautobuildapk_MainActivity_mesinPu
     _class: JClass,
     input: JString,
 ) -> jstring {
-    let input_str: String = env.get_string(&input).map(|s| s.into()).unwrap_or_default();
-    
-    // Proses balikkan string
-    let hasil = format!("Rust OK: {}", input_str.chars().rev().collect::<String>());
-    
-    env.new_string(hasil).unwrap().into_raw()
+    // Ambil string dari Java
+    let input_str: String = env.get_string(&input)
+        .map(|s| s.into())
+        .unwrap_or_else(|_| "ERR".to_string());
+
+    // Panggil logika dari file core.rs
+    let hasil = core::proses_data(input_str);
+
+    // Kirim balik ke Java
+    env.new_string(hasil)
+        .map(|js| js.into_raw())
+        .unwrap_or(std::ptr::null_mut())
 }
