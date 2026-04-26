@@ -15,21 +15,20 @@ public class MainActivity extends Activity {
         
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(40, 40, 40, 40);
+        root.setPadding(50, 50, 50, 50);
         root.setBackgroundColor(Style.BG);
 
         EditText in = new EditText(this);
         in.setHint("Input...");
-        Style.applyInput(in);
-
+        
         TextView out = new TextView(this);
-        out.setText("Ready");
+        out.setText("Vuzt Ready.");
         out.setTextColor(Style.TEXT);
-        out.setPadding(0, 30, 0, 30);
+        out.setPadding(0, 40, 0, 40);
 
         Button btn = new Button(this);
-        btn.setText("EXECUTE");
-        Style.applyBtn(btn);
+        btn.setText("RUN");
+        Style.apply(in, btn);
         
         btn.setOnClickListener(v -> out.setText(mesinPusatRust(in.getText().toString())));
 
