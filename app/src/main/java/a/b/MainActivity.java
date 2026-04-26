@@ -39,16 +39,25 @@ public class MainActivity extends Activity {
 
         // Judul (Plain Text Besar)
         TextView tvTitle = new TextView(this);
-        tvTitle.setText("Forgot Password");
+        tvTitle.setText("Cak Ru");
         tvTitle.setTextSize(24);
         tvTitle.setTextColor(Style.TEXT_COLOR);
         tvTitle.setGravity(Gravity.CENTER);
         tvTitle.setPadding(0, 0, 0, 60); // Jarak bawah
         centralContainer.addView(tvTitle);
 
+	// Response JNI (Pindah ke bawah kontaine>
+        final TextView tvResponse = new TextView(>
+        tvResponse.setText("Waiting...");
+        tvResponse.setTextColor(Style.TEXT_COLOR);
+        tvResponse.setPadding(0, 100, 0, 0); // J>
+        tvResponse.setGravity(Gravity.CENTER);
+        centralContainer.addView(tvResponse);
+
+
         // Sub-judul (Teks Kecil)
         TextView tvSubTitle = new TextView(this);
-        tvSubTitle.setText("Enter your registered phone number.");
+        tvSubTitle.setText("Enter Text");
         tvSubTitle.setTextSize(14);
         tvSubTitle.setTextColor(Color.parseColor("#DDDDDD"));
         tvSubTitle.setGravity(Gravity.CENTER);
@@ -57,7 +66,7 @@ public class MainActivity extends Activity {
 
         // Input Field
         final EditText etInput = new EditText(this);
-        etInput.setHint("6285330493313"); // Sesuai gambar
+        etInput.setHint("input teks"); // Sesuai gambar
         Style.applyInputStyle(etInput);
         centralContainer.addView(etInput);
 
@@ -74,12 +83,12 @@ public class MainActivity extends Activity {
         centralContainer.addView(btnNext);
 
         // Response JNI (Pindah ke bawah kontainer tengah)
-        final TextView tvResponse = new TextView(this);
-        tvResponse.setText("Waiting...");
-        tvResponse.setTextColor(Style.TEXT_COLOR);
-        tvResponse.setPadding(0, 100, 0, 0); // Jarak atas yang besar
-        tvResponse.setGravity(Gravity.CENTER);
-        centralContainer.addView(tvResponse);
+        // final TextView tvResponse = new TextView(this);
+        // tvResponse.setText("Waiting...");
+        // tvResponse.setTextColor(Style.TEXT_COLOR);
+        // tvResponse.setPadding(0, 100, 0, 0); // Jarak atas yang besar
+        // tvResponse.setGravity(Gravity.CENTER);
+        // centralContainer.addView(tvResponse);
         
         // Logika Tombol (Tetap Modular)
         btnNext.setOnClickListener(v -> {
